@@ -1,0 +1,2 @@
+Import('env')
+env.Program(['main.cpp', 'med.cpp', 'minepi.cpp'])

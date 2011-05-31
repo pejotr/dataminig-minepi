@@ -1,0 +1,8 @@
+Import('env')
+
+object_list = env.Object(source = ['medtest.cpp'])
+object_list.append('../build/minepi.o')
+object_list.append('../build/med.o')
+
+env.Program(target='med_test', source = object_list)
+
