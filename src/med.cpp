@@ -1,17 +1,15 @@
 #include <iostream>
 #include <fstream>
-#include <utility>
-
 #include <string>
-
 #include <cstdlib>
 #include <string.h>
 
 #include "med.hpp"
 
-
-int parse_data_file(std::string fileName)
+const EventSequence parse_data_file(const std::string& fileName)
 {
+    EventSequence seq;
+    EventSequence result;
     std::ifstream dataFile(fileName.c_str());
 
     if(dataFile.is_open()) 
@@ -20,47 +18,49 @@ int parse_data_file(std::string fileName)
         while(dataFile.good())
         {
             getline(dataFile, line);
-
-            if(!parse_data_line(line))
-            {
-                // report error
-            }
-
+            seq = parse_data_line(line);
+            result.splice(result.end(), seq);
         }
     }
+
+    return result;
 }
 
-int parse_data_line(const std::string& line)
+const EventSequence parse_data_line(const std::string& line)
 {
-    char params[512] = { 0x00, };
-    char *pch;
-    int sec, session;
-    PSubEpisode se;
+    EventSequence result;
+    char eventsSet[512] = { 0x00, };
+    char *token;
+    int sec, session, eventId;
 
-    sscanf(line.c_str(), "%d[%*s %*d],%d:%99[^\n]", &sec, &session, params);
-    pch = strtok(params," ,");
+    sscanf(line.c_str(), "%d[%*s %*d],%d:%99[^\n]", &sec, &session, eventsSet);
+    token = strtok(eventsSet," ,");
 
-    while(pch != NULL)
+    while(token != NULL)
     {
-        int eventid = atoi(pch);
-        Occurence *o = new Occurence();
-        o->start = o->stop = sec;
+        Event *event = new Event();
+        Occurence occurence(sec, sec);
 
-        se = __root_events_list[eventid];
+        event->predicate = atoi(token);
+        event->occurence = occurence;
 
-        if( se == NULL) 
-        {
-            se = new SubEpisode(NULL, NULL);
-            se->path = new int[1];
-            se->path[1] = eventid;
-
-           __root_events_list[eventid] =  se;
-        }
-
-        se->occurences.push_back(o);
-        pch = strtok(NULL, " ,");
+        token = strtok(NULL, " ,");
     }
 
-    return 1;
+    return result; 
+}
+
+void log(int lineno, const char *file, const char *format, ...) 
+{
+    char msg[256]; 
+    char temp[512], loc[128];
+
+    va_list args;
+    va_start (args, format);
+    vsprintf(msg, format, args);
+  
+    snprintf(loc, 128, "%s:%d", file, lineno);
+    snprintf(temp, 512, "%-30s > %s", loc, msg); 
+    printf("%s\n", temp);
 }
 
