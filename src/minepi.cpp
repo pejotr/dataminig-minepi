@@ -36,22 +36,22 @@ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqT
    
     for(; iter != end; iter++)
     {
-        Event event = *iter;
-        EpisodesMap::iterator tmp = singletons.find(event.predicate);
+        Event *event = *iter;
+        EpisodesMap::iterator tmp = singletons.find(event->predicate);
 
         if(tmp == singletons.end())
         {
             Episode *episode = new Episode();
             episode->parent = C0;
-            episode->predicates.front() = event.predicate;
-            episode->occurences.push_back(event.occurence);
+            episode->predicates.front() = event->predicate;
+            episode->occurences.push_back(event->occurence);
 
-            singletons[event.predicate] = episode;
+            singletons[event->predicate] = episode;
         } 
         else
         {
             Episode *episode = tmp->second;
-            episode->occurences.push_back(event.occurence);
+            episode->occurences.push_back(event->occurence);
         }
         
     }

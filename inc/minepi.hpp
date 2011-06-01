@@ -10,7 +10,7 @@ struct Event;
 //! EventType data structure. MINEPI set E consists of this elements
 typedef int PredicateType;
 typedef std::list<PredicateType> PredicatesSet;
-typedef std::list<Event> EventSequence;
+typedef std::list<Event*> EventSequence;
 typedef std::list<int> Windows;
 typedef std::list<Episode*> EpisodesCollection;
 typedef std::map<PredicateType, Episode*> EpisodesMap;

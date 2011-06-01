@@ -43,6 +43,7 @@ const EventSequence parse_data_line(const std::string& line)
 
         event->predicate = atoi(token);
         event->occurence = occurence;
+        result.push_back(event);
 
         token = strtok(NULL, " ,");
     }
