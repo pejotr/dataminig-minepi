@@ -9,7 +9,7 @@ int main()
 {
     std::cout << "Testing parse_data_line 1 ";
     {
-        const EventSequence seq = parse_data_line("53[141,seq 3991],1: 5, 6, 11");
+        const EventSequence seq = parse_data_line("53[141, seq 47681, 3991.3455],1: 5, 6, 11");
         assert(seq.size() == 3);
 
         std::list<int> cmp;
@@ -30,7 +30,7 @@ int main()
 
     std::cout << "Testing parse_data_line 2 ";
     {
-        const EventSequence seq = parse_data_line("53[141,seq 3991],1:5");
+        const EventSequence seq = parse_data_line("53[141, seq 47681, 31.094000],1:5");
         assert(seq.size() == 1);
         assert(static_cast<int>(seq.front()->predicate) == 5 );
     }
@@ -45,6 +45,7 @@ int main()
         std::list<int> cmp;
         cmp.push_back(4);
         cmp.push_back(4);
+        cmp.push_back(4);
         cmp.push_back(6);
         cmp.push_back(1);
         cmp.push_back(5);
@@ -52,7 +53,6 @@ int main()
         cmp.push_back(5);
         cmp.push_back(5);
         cmp.push_back(1);
-        cmp.push_back(5);
 
         std::list<int> values;
         for(EventSequence::const_iterator iter = seq.begin(); iter != seq.end(); iter++)

@@ -33,7 +33,7 @@ const EventSequence parse_data_line(const std::string& line)
     char *token;
     int sec, session, eventId;
 
-    sscanf(line.c_str(), "%d[%*s %*d],%d:%99[^\n]", &sec, &session, eventsSet);
+    sscanf(line.c_str(), "%d[%*s %*s %*d, %*d.%*d],%d:%99[^\n]", &sec, &session, eventsSet);
     token = strtok(eventsSet," ,");
 
     while(token != NULL)
