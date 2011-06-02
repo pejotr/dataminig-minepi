@@ -51,6 +51,28 @@ const EventSequence parse_data_line(const std::string& line)
     return result; 
 }
 
+bool same_predicate(const Event* first, const Event* second)
+{
+    return first->predicate == second->predicate;
+}
+
+const PredicatesSet generate_predicate_set(const EventSequence& seq)
+{
+    PredicatesSet predicateSet;
+    EventSequence::iterator end, iter;
+    EventSequence uniqueSeq = seq;
+
+    uniqueSeq.unique(same_predicate);
+    end = uniqueSeq.end();
+
+    for(iter = uniqueSeq.begin(); iter != end; iter++)
+    {
+        predicateSet.push_back((*iter)->predicate);
+    } 
+
+    return predicateSet; 
+}
+
 void log(int lineno, const char *file, const char *format, ...) 
 {
     char msg[256]; 
@@ -61,7 +83,7 @@ void log(int lineno, const char *file, const char *format, ...)
     vsprintf(msg, format, args);
   
     snprintf(loc, 128, "%s:%d", file, lineno);
-    snprintf(temp, 512, "%-30s > %s", loc, msg); 
+    snprintf(temp, 512, "%-25s # %s", loc, msg); 
     printf("%s\n", temp);
 }
 
