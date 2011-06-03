@@ -1,3 +1,4 @@
+#include <iostream>
 #include <map>
 #include "minepi.hpp"
 #include "med.hpp"
@@ -5,10 +6,20 @@
 static Episode *C0;
 static EpisodesCollection table;
 
-static EpisodesCollection generate_candidates(const EpisodesCollection& collection, 
+/*static*/ EpisodesCollection generate_candidates(const EpisodesCollection& collection, 
         const EpisodesCollection::iterator& start, const EpisodesCollection::iterator& stop);
 
 static void check_candidates();
+
+void print_episode(const PredicatesSet& set)
+{
+    PredicatesSet::const_iterator i, e = set.end();
+    for(i = set.begin(); i != e; i++)
+    {
+        std::cout << (int)*i;
+    }
+    std::cout << std::endl;
+}
 
 //! Performs one-time event sequence scan
 /*static*/ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqTrsh);
@@ -24,19 +35,23 @@ void minepi(const EventSequence& seq, const PredicatesSet& set,
     EpisodesCollection collection = scan_event_sequence(seq, freqTrsh);
     table.insert(iter, collection.begin(), collection.end());
 
-    generate_candidates(table, table.begin(), table.end());
+    //generate_candidates(table, table.begin(), table.end());
 }
 
 EpisodesCollection generate_candidates(const EpisodesCollection& collection, 
-        const EpisodesCollection::iterator& start, const EpisodesCollection::iterator& stop)
+        EpisodesCollection::iterator start, EpisodesCollection::iterator stop)
 {
     EpisodesCollection result;
     EpisodesCollection::iterator iter1, iter2;
 
+    std::cout << collection.size() << std::endl;
+
     for(iter1 = start; iter1 != stop; iter1++)
     {
         Episode *episode1 = *iter1;
-        for(iter2 = start; iter2 != end; iter2++)
+        std::cout << episode1->predicates.front() << std::endl;
+        print_episode(episode1->predicates);
+        for(iter2 = start; iter2 != stop; iter2++)
         {
             Episode *episode2 = *iter2;
 
@@ -52,6 +67,7 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
 
                 if(ep1 == ep2 && p1 != p2)
                 {
+                    APPLOG("Generating new candidate");
                     Episode *candidate = new Episode();
                     candidate->parent = episode1;
                     candidate->predicates = episode1->predicates;
@@ -81,9 +97,10 @@ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqT
 
         if(tmp == singletons.end())
         {
+            APPLOG("Episode with predicate %d has not been found", event->predicate);
             Episode *episode = new Episode();
             episode->parent = C0;
-            episode->predicates.front() = event->predicate;
+            episode->predicates.push_back(event->predicate);
             episode->occurences.push_back(event->occurence);
 
             singletons[event->predicate] = episode;
