@@ -9,3 +9,8 @@ object_list = env.Object(source = ['minepitest.cpp'])
 object_list.append('../build/minepi.o')
 object_list.append('../build/med.o')
 env.Program(target='minepi_test', source = object_list)
+
+object_list = env.Object(source = ['minepitest2.cpp'])
+object_list.append('../build/minepi.o')
+object_list.append('../build/med.o')
+env.Program(target='minepi2_test', source = object_list)

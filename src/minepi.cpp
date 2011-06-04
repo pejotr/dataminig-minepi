@@ -1,25 +1,21 @@
 #include <iostream>
 #include <map>
+#include <functional>
+#include <algorithm>
 #include "minepi.hpp"
 #include "med.hpp"
 
 static Episode *C0;
-static EpisodesCollection table;
+static EpisodesCollection __table;
+static EpisodesCollection __singletons;
 
-/*static*/ EpisodesCollection generate_candidates(const EpisodesCollection& collection, 
+EpisodesCollection generate_candidates(const EpisodesCollection& collection, 
         const EpisodesCollection::iterator& start, const EpisodesCollection::iterator& stop);
 
-static void check_candidates();
+const EpisodesCollection check_candidates(const EpisodesCollection& candidates);
 
-void print_episode(const PredicatesSet& set)
-{
-    PredicatesSet::const_iterator i, e = set.end();
-    for(i = set.begin(); i != e; i++)
-    {
-        std::cout << (int)*i;
-    }
-    std::cout << std::endl;
-}
+//! Compute set of minimal occurences of an episode
+static void compute_mo(Episode *episode/*, const Windows& windows*/);
 
 //! Performs one-time event sequence scan
 /*static*/ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqTrsh);
@@ -32,25 +28,23 @@ void minepi(const EventSequence& seq, const PredicatesSet& set,
     C0 = new Episode;
     C0->parent = NULL;
 
-    EpisodesCollection collection = scan_event_sequence(seq, freqTrsh);
-    table.insert(iter, collection.begin(), collection.end());
+    __singletons = scan_event_sequence(seq, freqTrsh);
+    //__table.insert(iter, __singletons.begin(), __singletons.end());
 
-    //generate_candidates(table, table.begin(), table.end());
+    EpisodesCollection candidates = generate_candidates(__singletons, __singletons.begin(), __singletons.end());
+    check_candidates(candidates);
+    
 }
 
 EpisodesCollection generate_candidates(const EpisodesCollection& collection, 
-        EpisodesCollection::iterator start, EpisodesCollection::iterator stop)
+        const EpisodesCollection::iterator& start, const EpisodesCollection::iterator& stop)
 {
     EpisodesCollection result;
     EpisodesCollection::iterator iter1, iter2;
 
-    std::cout << collection.size() << std::endl;
-
     for(iter1 = start; iter1 != stop; iter1++)
     {
         Episode *episode1 = *iter1;
-        std::cout << episode1->predicates.front() << std::endl;
-        print_episode(episode1->predicates);
         for(iter2 = start; iter2 != stop; iter2++)
         {
             Episode *episode2 = *iter2;
@@ -84,18 +78,19 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
 
 EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqTrsh)
 {
-    EpisodesMap singletons;
+    EpisodesCollection singletons;
+    EpisodesMap singletonsIndexer;
     EpisodesCollection result;
     EventSequence::const_iterator iter = seq.begin(), 
                 end = seq.end();
-    EpisodesMap::iterator mapiter, mapend;
+    EpisodesCollection::iterator colliter, collend;
    
     for(; iter != end; iter++)
     {
         Event *event = *iter;
-        EpisodesMap::iterator tmp = singletons.find(event->predicate);
+        EpisodesMap::iterator tmp = singletonsIndexer.find(event->predicate);
 
-        if(tmp == singletons.end())
+        if(tmp == singletonsIndexer.end())
         {
             APPLOG("Episode with predicate %d has not been found", event->predicate);
             Episode *episode = new Episode();
@@ -103,7 +98,8 @@ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqT
             episode->predicates.push_back(event->predicate);
             episode->occurences.push_back(event->occurence);
 
-            singletons[event->predicate] = episode;
+            singletonsIndexer[event->predicate] = episode;
+            singletons.push_back(episode);
         } 
         else
         {
@@ -113,11 +109,11 @@ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqT
         
     }
 
-    mapend = singletons.end();
-    for(mapiter = singletons.begin(); mapiter != mapend; )
+    collend = singletons.end();
+    for(colliter = singletons.begin(); colliter != collend; )
     {
-        EpisodesMap::iterator temp = mapiter++;
-        Episode *episode = temp->second;
+        EpisodesCollection::iterator temp = colliter++;
+        Episode *episode = *temp;
 
         if( episode->occurences.size() < freqTrsh )
         {
@@ -126,9 +122,67 @@ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqT
             singletons.erase(temp);
             continue;
         }
-
-        result.push_back(temp->second);
     }
 
-    return result;
+    return singletons;
+}
+
+struct find_predicate : public std::binary_function<Episode*, PredicateType&, bool>
+{
+    bool operator()(const Episode* e, const PredicateType& p) const
+    {
+        APPLOG("Porownanie %d i %d", e->predicates.front(), p);
+        if( e->predicates.front() == p )
+            return true;
+
+        return false;
+    }
+};
+
+/*static*/ const EpisodesCollection check_candidates(const EpisodesCollection& candidates 
+                /*const Windows& windows*/)
+{
+    EpisodesCollection::const_iterator iter, end = candidates.end();
+     
+    for(iter = candidates.begin(); iter != end; iter++)
+    {
+        Episode *e = *iter;
+        compute_mo(e);
+    }
+
+    return EpisodesCollection();
+
+}
+
+static void compute_mo(Episode *episode/*, const Windows& windows*/)
+{
+    std::list<PredicateType> predicates = episode->predicates; 
+    std::list<Occurence> parentOccurences = episode->parent->occurences;
+    std::list<Occurence>::iterator iter, end = parentOccurences.end();
+    PredicateType lastPredicate = predicates.back();
+
+    APPLOG("Episode predicates %d %d", (int)predicates.front(), lastPredicate);
+
+    EpisodesCollection::iterator result = std::find_if(__singletons.begin(), __singletons.end(), 
+        std::bind2nd(find_predicate(), lastPredicate));
+
+    Episode *e = *result;
+    std::list<Occurence> lastPredicateOccurences = e->occurences;
+    std::list<Occurence>::iterator predOIter, predOEnd = lastPredicateOccurences.end();
+
+    for(iter = parentOccurences.begin(); iter != end; iter++)
+    {
+        for(predOIter = lastPredicateOccurences.begin(); predOIter != predOEnd; predOIter++) 
+        {
+
+            if(iter->stop < predOIter->start /* && inWindow */)
+            {
+                APPLOG("New occurence located %d %d", iter->start, predOIter->stop);
+                Occurence o(iter->start, predOIter->stop);
+                episode->occurences.push_back(o);
+                break;
+            }            
+
+        }
+    }         
 }
