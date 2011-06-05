@@ -44,13 +44,14 @@ void minepi(const EventSequence& seq, const PredicatesSet& set,
 
     __singletons = scan_event_sequence(seq, freqTrsh);
     __table.insert(iter, __singletons.begin(), __singletons.end());
-//    EpisodesCollection candidates = __singletons;
 
-    EpisodesCollection candidates = generate_candidates(__singletons, __singletons.begin(), __singletons.end());
-    EpisodesCollection newEpisodes = check_candidates(candidates, freqTrsh);
+    EpisodesCollection newEpisodes = __singletons;
 
-    candidates = generate_candidates(newEpisodes, newEpisodes.begin(), newEpisodes.end());
-    newEpisodes = check_candidates(candidates, freqTrsh);
+    while(newEpisodes.empty() == false )
+    {
+        EpisodesCollection candidates = generate_candidates(newEpisodes, newEpisodes.begin(), newEpisodes.end());
+        EpisodesCollection newEpisodes = check_candidates(candidates, freqTrsh);
+    }
 
     
 }
