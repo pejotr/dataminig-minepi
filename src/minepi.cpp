@@ -2,6 +2,8 @@
 #include <map>
 #include <functional>
 #include <algorithm>
+#include <sstream>
+
 #include "minepi.hpp"
 #include "med.hpp"
 
@@ -12,13 +14,25 @@ static EpisodesCollection __singletons;
 EpisodesCollection generate_candidates(const EpisodesCollection& collection, 
         const EpisodesCollection::iterator& start, const EpisodesCollection::iterator& stop);
 
-const EpisodesCollection check_candidates(const EpisodesCollection& candidates);
+const EpisodesCollection check_candidates(const EpisodesCollection& candidates, const int freqTrsh);
 
 //! Compute set of minimal occurences of an episode
 static void compute_mo(Episode *episode/*, const Windows& windows*/);
 
 //! Performs one-time event sequence scan
 /*static*/ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqTrsh);
+
+const std::string print_episode(const std::list<PredicateType>& predicates)
+{
+    std::list<PredicateType>::const_iterator iter, end = predicates.end();
+    std::stringstream stream;
+
+    for( iter = predicates.begin(); iter != end; iter++) {
+        stream << *iter;
+    }
+
+    return stream.str();
+}
 
 void minepi(const EventSequence& seq, const PredicatesSet& set, 
         const int freqTrsh, const Windows& wnds)
@@ -29,10 +43,15 @@ void minepi(const EventSequence& seq, const PredicatesSet& set,
     C0->parent = NULL;
 
     __singletons = scan_event_sequence(seq, freqTrsh);
-    //__table.insert(iter, __singletons.begin(), __singletons.end());
+    __table.insert(iter, __singletons.begin(), __singletons.end());
+//    EpisodesCollection candidates = __singletons;
 
     EpisodesCollection candidates = generate_candidates(__singletons, __singletons.begin(), __singletons.end());
-    check_candidates(candidates);
+    EpisodesCollection newEpisodes = check_candidates(candidates, freqTrsh);
+
+    candidates = generate_candidates(newEpisodes, newEpisodes.begin(), newEpisodes.end());
+    newEpisodes = check_candidates(candidates, freqTrsh);
+
     
 }
 
@@ -61,12 +80,14 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
 
                 if(ep1 == ep2 && p1 != p2)
                 {
-                    APPLOG("Generating new candidate");
                     Episode *candidate = new Episode();
                     candidate->parent = episode1;
                     candidate->predicates = episode1->predicates;
                     candidate->predicates.push_back(p2);
                     result.push_back(candidate);
+
+                    std::string predicatesStr = print_episode(candidate->predicates);
+                    APPLOG("Generating new candidate %s", predicatesStr.c_str());
                 }
 
             }
@@ -131,7 +152,6 @@ struct find_predicate : public std::binary_function<Episode*, PredicateType&, bo
 {
     bool operator()(const Episode* e, const PredicateType& p) const
     {
-        APPLOG("Porownanie %d i %d", e->predicates.front(), p);
         if( e->predicates.front() == p )
             return true;
 
@@ -139,19 +159,32 @@ struct find_predicate : public std::binary_function<Episode*, PredicateType&, bo
     }
 };
 
-/*static*/ const EpisodesCollection check_candidates(const EpisodesCollection& candidates 
+/*static*/ const EpisodesCollection check_candidates(const EpisodesCollection& candidates , 
+                const int freqTrsh
                 /*const Windows& windows*/)
 {
     EpisodesCollection::const_iterator iter, end = candidates.end();
+    EpisodesCollection newEpisodes;
      
     for(iter = candidates.begin(); iter != end; iter++)
     {
-        Episode *e = *iter;
-        compute_mo(e);
+        Episode *candidate = *iter;
+        compute_mo(candidate);
+
+        if(candidate->occurences.size() >= freqTrsh) 
+        {
+            APPLOG("Found new episode");
+            newEpisodes.push_back(candidate); 
+        }
+        else
+        {
+            std::string episodePredicates = print_episode(candidate->predicates);
+            APPLOG("Candidate %s is not frequent enough", episodePredicates.c_str());
+        }
+
     }
 
-    return EpisodesCollection();
-
+    return newEpisodes;
 }
 
 static void compute_mo(Episode *episode/*, const Windows& windows*/)
@@ -161,7 +194,9 @@ static void compute_mo(Episode *episode/*, const Windows& windows*/)
     std::list<Occurence>::iterator iter, end = parentOccurences.end();
     PredicateType lastPredicate = predicates.back();
 
-    APPLOG("Episode predicates %d %d", (int)predicates.front(), lastPredicate);
+    predicates.pop_back();
+    std::string basePredicate = print_episode(predicates);
+    APPLOG("Episode predicates base(%s) tail(%d)", basePredicate.c_str(), lastPredicate);
 
     EpisodesCollection::iterator result = std::find_if(__singletons.begin(), __singletons.end(), 
         std::bind2nd(find_predicate(), lastPredicate));
@@ -177,7 +212,7 @@ static void compute_mo(Episode *episode/*, const Windows& windows*/)
 
             if(iter->stop < predOIter->start /* && inWindow */)
             {
-                APPLOG("New occurence located %d %d", iter->start, predOIter->stop);
+                APPLOG("New occurence located %d-%d", iter->start, predOIter->stop);
                 Occurence o(iter->start, predOIter->stop);
                 episode->occurences.push_back(o);
                 break;
