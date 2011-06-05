@@ -75,6 +75,7 @@ const PredicatesSet generate_predicate_set(const EventSequence& seq)
 
 void log(int lineno, const char *file, const char *format, ...) 
 {
+#ifdef DEBUG
     char msg[256]; 
     char temp[512], loc[128];
 
@@ -85,5 +86,6 @@ void log(int lineno, const char *file, const char *format, ...)
     snprintf(loc, 128, "%s:%d", file, lineno);
     snprintf(temp, 512, "%-25s # %s", loc, msg); 
     printf("%s\n", temp);
+#endif
 }
 

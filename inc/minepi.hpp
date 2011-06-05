@@ -39,6 +39,6 @@ struct Event
 
 //! MINEPI algortihm
 void minepi(const EventSequence& seq, const PredicatesSet& set, 
-                    const int freqTrsh, const Windows& wnds);
+                    const int freqTrsh, const int wnd);
 
 #endif /* _MINEPI_HPP_ */
