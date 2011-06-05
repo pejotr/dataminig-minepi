@@ -27,7 +27,6 @@ struct Episode
 {
     Episode *parent;
     std::list<PredicateType> predicates;
-    std::list<Episode*> superepisodes;
     std::list<Occurence> occurences;
 };
 

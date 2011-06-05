@@ -58,7 +58,8 @@ void print_table()
         std::string predicates = predicates_to_string((*tableIter)->predicates);
         std::string occurences = occurences_to_string((*tableIter)->occurences);
 
-        std::cout << predicates << " : " << occurences << std::endl;
+//        std::cout << predicates << " : " << occurences << std::endl;
+        std::cout << predicates << " : "  << (*tableIter)->occurences.size() << std::endl;
     } 
 }
 
