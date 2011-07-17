@@ -12,9 +12,12 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
 
 int main()
 {
-    const EventSequence seq = parse_data_file("file1-all.txt");
+    const EventSequence seq = parse_data_file("parse.dat");
     const PredicatesSet predicateSet = generate_predicate_set(seq);
+    Windows windows;
 
-    minepi(seq, predicateSet, 100, 10);
+    windows.push_back(10);
+
+    minepi(seq, predicateSet, 2, 100);
 
 }
