@@ -100,8 +100,8 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
         {
             Episode *episode2 = *iter2;
 
-            if(episode1->parent == episode2->parent && 
-                        episode1->predicates != episode2->predicates)
+            if(episode1->parent == episode2->parent /*&&*/ 
+                        /*episode1->predicates != episode2->predicates*/)
             {
                 std::list<PredicateType> ep1 = episode1->predicates,
                                          ep2 = episode2->predicates;
