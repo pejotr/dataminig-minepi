@@ -10,11 +10,22 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
         EpisodesCollection::iterator start, EpisodesCollection::iterator stop);
 
 
-int main()
+int main(int argc, char** argv)
 {
+    if(argc < 3) 
+    {
+        std::cout << "Usage: ./med_minepi [minimal-occurances] [window-size]" << std::endl;
+        return 0;
+    }
+
+
     const EventSequence seq = parse_data_file("file1-all.txt");
     const PredicatesSet predicateSet = generate_predicate_set(seq);
 
-    minepi(seq, predicateSet, 100, 10);
+
+    int window = atoi(argv[2]);
+    int freqTs = atoi(argv[1]);
+
+    minepi(seq, predicateSet, freqTs, window);
 
 }

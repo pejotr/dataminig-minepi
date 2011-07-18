@@ -96,35 +96,21 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
     for(iter1 = start; iter1 != stop; iter1++)
     {
         Episode *episode1 = *iter1;
-        for(iter2 = start; iter2 != stop; iter2++)
+
+        for(iter2 = __singletons.begin(); iter2 != __singletons.end(); iter2++)
         {
             Episode *episode2 = *iter2;
+            Episode *candidate = new Episode();
 
-            if(episode1->parent == episode2->parent /*&&*/ 
-                        /*episode1->predicates != episode2->predicates*/)
-            {
-                std::list<PredicateType> ep1 = episode1->predicates,
-                                         ep2 = episode2->predicates;
-                PredicateType p1 = ep1.back(), p2 = ep2.back();
-                            
-                ep1.pop_back();
-                ep2.pop_back();
+            candidate->parent = episode1;
+            candidate->predicates = episode1->predicates;
+            candidate->predicates.push_back(episode2->predicates.back());
+            result.push_back(candidate);
 
-                if(ep1 == ep2 && p1 != p2)
-                {
-                    Episode *candidate = new Episode();
-                    candidate->parent = episode1;
-                    candidate->predicates = episode1->predicates;
-                    candidate->predicates.push_back(p2);
-                    result.push_back(candidate);
-
-                    std::string predicatesStr = predicates_to_string(candidate->predicates);
-                    APPLOG("Generating new candidate %s", predicatesStr.c_str());
-                }
-
-            }
-        } 
-    } 
+            std::string predicatesStr = predicates_to_string(candidate->predicates);
+            APPLOG("Generating new candidate %s", predicatesStr.c_str());
+        }
+    }
 
     return result;
 }
@@ -156,6 +142,7 @@ EpisodesCollection scan_event_sequence(const EventSequence& seq, const int freqT
         } 
         else
         {
+            //APPLOG("Adding occurence of predicate %d", event->predicate);
             Episode *episode = tmp->second;
             episode->occurences.push_back(event->occurence);
         }
@@ -238,9 +225,10 @@ static void compute_mo(Episode *episode, const int window)
 
     for(iter = parentOccurences.begin(); iter != end; iter++)
     {
+        //APPLOG("  Checking %d-%d", iter->start, iter->stop );
         for(predOIter = lastPredicateOccurences.begin(); predOIter != predOEnd; predOIter++) 
         {
-
+            //APPLOG("    Checking  with %d", predOIter->start );
             if(iter->stop < predOIter->start && (predOIter->start - iter->start) <= window )
             {
                 APPLOG("New occurence located %d-%d", iter->start, predOIter->stop);

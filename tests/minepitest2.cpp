@@ -10,7 +10,7 @@ EpisodesCollection generate_candidates(const EpisodesCollection& collection,
         EpisodesCollection::iterator start, EpisodesCollection::iterator stop);
 
 
-int main()
+int main(int argc, char** argv)
 {
     const EventSequence seq = parse_data_file("parse.dat");
     const PredicatesSet predicateSet = generate_predicate_set(seq);
@@ -18,6 +18,6 @@ int main()
 
     windows.push_back(10);
 
-    minepi(seq, predicateSet, 2, 100);
+    minepi(seq, predicateSet, 2, 150);
 
 }
